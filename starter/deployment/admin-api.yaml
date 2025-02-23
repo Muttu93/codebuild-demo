@@ -1,10 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: codework-checkin
+  name: coworking
 spec:
+  # A local environment doesn't generally have a LoadBalancer, so we use NodePort instead.
+  type: NodePort
   selector:
-    app.kubernetes.io/name: codework-checkin
+    service: coworking
   ports:
   - name: "5153"
     protocol: TCP
@@ -14,23 +16,24 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: codework-checkin
+  name: coworking
   labels:
-    name: codework-checkin
+    name: coworking
 spec:
   replicas: 1
   selector:
     matchLabels:
-      service: codework-checkin
+      service: coworking
   template:
     metadata:
       labels:
-        service: codework-checkin
+        service: coworking
     spec:
       containers:
-      - name: codework-checkin
-        image: 514378342278.dkr.ecr.us-east-1.amazonaws.com/codework-checkin:1
-        imagePullPolicy: Always
+      - name: coworking
+        # Locally hosted docker image
+        image: 514378342278.dkr.ecr.us-east-1.amazonaws.com/coworking:0.0.1
+        imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
             path: /health_check
@@ -43,17 +46,13 @@ spec:
             port: 5153
           initialDelaySeconds: 5
           timeoutSeconds: 5
+        envFrom:
+        - configMapRef:
+            name: <NAME OF THE ConfigMap>
         env:
-        - name: DB_USERNAME
-          valueFrom:
-            configMapKeyRef:
-              name: db-env
-              key: DB_USERNAME
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: db-secret
-              key: DB_PASSWORD
-        - name: DB_HOST
-          value: app-db
+              name: <NAME OF THE Secret>
+              key: <THE KEY FROM Secret WHICH has THE ENCODED PASSWORD>
       restartPolicy: Always
